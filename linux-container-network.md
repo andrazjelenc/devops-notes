@@ -368,7 +368,7 @@ Connections is established! To close the connection press CTRL+Č and enter `qui
 
 It also works when we try to connect from container2.
 ```
-]# ip netns exec ns2 telnet 192.168.20.2 80
+# ip netns exec ns2 telnet 192.168.20.2 80
 Trying 192.168.20.2...
 Connected to 192.168.20.2.
 Escape character is '^]'.
@@ -655,7 +655,7 @@ PING 192.168.20.1 (192.168.20.1) 56(84) bytes of data.
 64 bytes from 192.168.20.1: icmp_seq=1 ttl=64 time=0.057 ms
 64 bytes from 192.168.20.1: icmp_seq=2 ttl=64 time=0.063 ms
 
-[root@centos7-networking ~]# ip netns exec ns2 ping 192.168.20.2
+# ip netns exec ns2 ping 192.168.20.2
 PING 192.168.20.2 (192.168.20.2) 56(84) bytes of data.
 ^C
 --- 192.168.20.2 ping statistics ---
@@ -674,7 +674,7 @@ PING 192.168.20.2 (192.168.20.2) 56(84) bytes of data.
 64 bytes from 192.168.20.2: icmp_seq=1 ttl=63 time=0.138 ms
 64 bytes from 192.168.20.2: icmp_seq=2 ttl=63 time=0.088 ms
 
-[root@centos7-networking ~]# ip netns exec ns1 ping 192.168.20.3
+# ip netns exec ns1 ping 192.168.20.3
 PING 192.168.20.3 (192.168.20.3) 56(84) bytes of data.
 ^C
 --- 192.168.20.3 ping statistics ---
