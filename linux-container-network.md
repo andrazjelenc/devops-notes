@@ -472,7 +472,7 @@ We will limit exposure with adding rules to FILTER table. This is also the defau
 
 Our traffic from the internet to the container will come to ens192 interface. It will first hit NAT PREROUTING chain that will determine that the traffic is NOT for this host (due to our DNAT rule), then the FILTER FORWARD for limiting access and then NAT POSTROUTING chain. After that the traffic will be routed to bridge0 interface.
 
-The traffic from container to the internet will come to bridge0 interface. And it will also first hit NAT PREROUTING that will determine that the traffix is NOT for this host (we are aiming to the internet), then FILTER FORWARD and then NAT POSTROUTING, where masquarede will happen. The traffic will then continue to interface ens192 and to the internet. 
+The traffic from container to the internet will come to bridge0 interface. And it will also first hit NAT PREROUTING that will determine that the traffic is NOT for this host (we are aiming to the internet), then FILTER FORWARD and then NAT POSTROUTING, where masquarede will happen. The traffic will then continue to interface ens192 and to the internet. 
 
 So FORWARD chain of FILTER table will be hit on the way in and on the way out. We will first modify default policy from ACCEPT to DROP.
 ```
