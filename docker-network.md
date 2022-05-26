@@ -10,6 +10,9 @@ Content:
 - [Day 4: Exposing ports to the outside](#day-4-exposing-ports-to-the-outside)
 - [Day 5: DNS Resolution in default network](#day-5-dns-resolution-in-default-network)
 - [Day 6: DNS Resolution in custom network](#day-6-dns-resolution-in-custom-network)
+- [Day 7: Demo usage of Docker networks (Simple)](#day-7-demo-usage-of-docker-networks-simple)
+- [Day 8: Demo usage of Docker networks (Advanced)](#day-8-demo-usage-of-docker-networks-advanced)
+- [Day 9: Conclusion](#day-9-conclusion)
 
 
 We will be using custom made image that will already have installed some of the tools for inspecting and debugging network like ping or netstat.
@@ -583,6 +586,8 @@ PING database (172.29.0.3) 56(84) bytes of data.
 ```
 
 ## Day 8: Demo usage of Docker networks (Advanced)
+[Back to top](#docker-network)
+
 Let's keep previous design of application and database. If we want to create more restricted access between them, we must separate them into different networks and then configure iptables to allow just specific traffic between them. To avoid routing troubles we put each container in only one network.
 
 Because of different networks, DNS resolving won't work, we will use static IPs and static entries in hosts file.
@@ -659,6 +664,7 @@ Escape character is '^]'.
 ```
 
 ## Day 9: Conclusion
+[Back to top](#docker-network)
 
 Docker simplifies dealing with container networks, but we still need to understand how everything works under the hood. Unless we can make invalid assumptions and compromise the whole application.
 
