@@ -15,8 +15,19 @@ Our K8S cluster will contain 3 VMs with CentOS 7:
 
 The first VM will be our master node that will run control plane. The second and the third will be our worker nodes.
 
+Content:
+- [Day 1: Prepare VMs](#day-1-prepare-vms)
+- [Day 2: Containerd and K8S](#day-2-containerd-and-k8s)
+- [Day 3: Create cluster](#day-3-create-cluster)
+- [Day 4: Flannel for pod networks](#day-4-flannel-for-pod-networks)
+- [Day 5: MetalLB for Load Balancing](#day-5-metallb-for-load-balancing)
+- [Day 6: Deploy demo app](#day-6-deploy-demo-app)
+- [Day 7: Ingress](#day-7-ingress)
+- [Day 8: LB in front of Ingress](#day-8-lb-in-front-of-ingress)
 
 ## Day 1: Prepare VMs
+[Back to top](#k8s-bare-metal)
+
 Do this steps on all three VMs.
 
 ### Networking and hostnames 
@@ -71,6 +82,8 @@ Apply changes without reboot.
 sysctl --system
 ```
 ## Day 2: Containerd and K8S
+[Back to top](#k8s-bare-metal)
+
 Do this steps on all three VMs.
 
 We need container runtime on each node. K8S will use it to spawn containers. We will be using containerd runtime.
@@ -138,6 +151,7 @@ We first need to start kubelet.
 ```
 
 ## Day 3: Create cluster
+[Back to top](#k8s-bare-metal)
 
 On our master node we now create new cluster. We will add `--pod-network-cidr` parameter that we will later need when installing Flannel for handling pod network.
 ```
@@ -164,6 +178,8 @@ demo-k8s-3   NotReady   <none>          107s   v1.24.1
 ```
 
 ## Day 4: Flannel for pod networks
+[Back to top](#k8s-bare-metal)
+
 Just like K8s need containerd to handle creating containers, it also needs Flannel or somebody else like Calico to handle networking.
 
 We first download flannel kubernetes manifest
@@ -202,6 +218,8 @@ kube-system   kube-scheduler-demo-k8s-1              1/1     Running   1        
 ```
 
 # Day 5: MetalLB for Load Balancing
+[Back to top](#k8s-bare-metal)
+
 If we now go and deploy some Load Balancer service we will see it will hang in `pending` state. We need to deploy Load Balancer first.
 
 We can deploy MetalLB directly from manifests on the Internet.
@@ -231,6 +249,8 @@ And apply it with
 ```
 
 ## Day 6: Deploy demo app
+[Back to top](#k8s-bare-metal)
+
 We will deploy Tea Store application from https://github.com/DescartesResearch/TeaStore. Let us download manifest.
 ```
 # wget https://raw.githubusercontent.com/DescartesResearch/TeaStore/master/examples/kubernetes/teastore-clusterip.yaml
@@ -309,6 +329,7 @@ So now we can access our app using this external IP and service port 8080:
 The downside of this approach is that we burn one IP for each external service.
 
 ## Day 7: Ingress
+[Back to top](#k8s-bare-metal)
 
 If we used Load Balancer service do to L2 load balancing, we use Ingress to do L7 load balancing. It can be realized on many different ways. With Nginx or HAProxy for example. We will go with Nginx.
 
@@ -389,7 +410,8 @@ spec:
 
 If we now try again we should see our teastore app again even if we use IP address instead of domain name. The problem we still have is that we need to know IP of one of our cluster nodes and also to use this weird high number port. We will fix this by placing Load Balancer in front of Ingress controller service. 
 
-## Day 8: LB in front of Ingress.
+## Day 8: LB in front of Ingress
+[Back to top](#k8s-bare-metal)
 
 We basically have two options:
 - Use external LB outside of cluster
