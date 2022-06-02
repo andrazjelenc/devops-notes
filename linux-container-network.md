@@ -579,6 +579,13 @@ We could add to the same network namespace two different veth interfaces (with t
 [Back to top](#linux-container-network)
 
 If we want to filter traffic between two containers we first need to put them into separate segments. This means we need to create new bridge. And then we will be able to filter traffic between bridge0 and brige1.
+
+---
+
+NOTE: We can force bridge traffic to go through host's iptables with `br_netfilter` module. With using this module we could keep containers connected to the same bridge and then filter traffic there. See example [here](./docker-network.md#day-9-demo-usage-of-docker-networks-advanced-with-brnetfilter).
+
+---
+
 ```
 ###################################
 # host                            #

@@ -12,7 +12,8 @@ Content:
 - [Day 6: DNS Resolution in custom network](#day-6-dns-resolution-in-custom-network)
 - [Day 7: Demo usage of Docker networks (Simple)](#day-7-demo-usage-of-docker-networks-simple)
 - [Day 8: Demo usage of Docker networks (Advanced)](#day-8-demo-usage-of-docker-networks-advanced)
-- [Day 9: Conclusion](#day-9-conclusion)
+- [Day 9: Demo usage of Docker networks (Advanced with br_netfilter)](#day-9-demo-usage-of-docker-networks-advanced-with-brnetfilter)
+- [Day 10: Conclusion](#day-10-conclusion)
 
 
 We will be using custom made image that will already have installed some of the tools for inspecting and debugging network like ping or netstat.
@@ -590,6 +591,12 @@ PING database (172.29.0.3) 56(84) bytes of data.
 
 Let's keep previous design of application and database. If we want to create more restricted access between them, we must separate them into different networks and then configure iptables to allow just specific traffic between them. To avoid routing troubles we put each container in only one network.
 
+---
+
+NOTE: We can force bridge traffic to go through host's iptables with `br_netfilter` module. See next section for more info. 
+
+---
+
 Because of different networks, DNS resolving won't work, we will use static IPs and static entries in hosts file.
 
 ```
@@ -663,7 +670,110 @@ Connected to database.
 Escape character is '^]'.
 ```
 
-## Day 9: Conclusion
+## Day 9: Demo usage of Docker networks (Advanced with br_netfilter)
+[Back to top](#docker-network)
+
+Another way to create more restricted access between two containers is to use br_netfilter module. This module forces bridge traffic to go from one container to another via host's iptables. So we can catch this traffic in FORWARD chain of FILTER table.
+
+We first check if br_netfilter module is already loaded. With tool `lsmod` we can see all modules that are currently loaded.
+```
+# lsmod | grep br_netfilter
+br_netfilter           22256  0
+bridge                151336  1 br_netfilter
+```
+
+If we do not see our module, we need to load it first. We can do that with `modprobe` command. And to make this permanent we also need to add it to modules-load directory.
+
+```
+# modprobe overlay
+# cat <<EOF | sudo tee /etc/modules-load.d/br_netfilter.conf
+br_netfilter
+EOF
+```
+
+Next we need to enable settings for forcing traffic via iptables. You can probably skip `net.ipv4.ip_forward = 1` as it should be already present somewhere in your sysctl config.
+```
+# cat <<EOF | sudo tee /etc/sysctl.d/br_netfilter.conf
+net.bridge.bridge-nf-call-iptables  = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward                 = 1
+EOF
+
+# sysctl --system
+```
+
+We are now ready to start inspecting the traffic between containers inside same bridge. We will first recreate the following design 
+
+```
+#####################################################
+# host                                              #
+#     outside-bridge    inside-bridge (internal)    #
+#          |            /       \                   #
+#     veth09b67512 vetheebbab0b  veth511faf7a       #
+#          |          /           \                 #
+#     ###################       ################### #
+#     #  eth0      eth1 #       #  eth0           # #
+#     #                 #       #                 # #
+#     # application     #       # database        # #
+#     ###################       ################### #
+#####################################################
+```
+
+```
+# docker network create -o "com.docker.network.bridge.name"="outside-bridge" outside-bridge
+# docker network create --internal -o "com.docker.network.bridge.name"="inside-bridge" inside-bridge
+
+# docker run -d --name application --net outside-bridge -p 8080:8080 ubuntu2 sleep 10000
+# docker network connect inside-bridge application
+
+# docker run -d --name database --net inside-bridge ubuntu2 sleep 10000
+```
+
+As before we can now ping from application to the database using hostname.
+
+```
+# docker exec -it application ping database
+PING database (192.168.96.3) 56(84) bytes of data.
+64 bytes from database.inside-bridge (192.168.96.3): icmp_seq=1 ttl=64 time=0.145 ms
+64 bytes from database.inside-bridge (192.168.96.3): icmp_seq=2 ttl=64 time=0.139 ms
+```
+
+But because of br_netfilter module we can now block this using host's iptables. We first block all the traffic on our internal bridge.
+```
+# iptables -I DOCKER-USER 1 -i inside-bridge -o inside-bridge -j DROP
+```
+
+We see that the traffic is blocked between application and database 
+```
+# docker exec -it application ping database
+PING database (192.168.96.3) 56(84) bytes of data.
+^C
+--- database ping statistics ---
+3 packets transmitted, 0 received, 100% packet loss, time 1999ms
+```
+So if we only want to allow TCP traffic on port 5432, we need to add one rule.
+```
+# iptables -I DOCKER-USER 1 -i inside-bridge -o inside-bridge -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+# iptables -I DOCKER-USER 1 -i inside-bridge -o inside-bridge -p tcp --dport 5432 -j ACCEPT
+```
+
+Let us check connectivity with netcat and telnet. We see that connection is established.
+```
+# docker exec -it database nc -l -v -n -p 5432
+Listening on 0.0.0.0 5432
+Connection received on 192.168.20.1 41734
+```
+
+```
+docker exec -it application telnet database 5432
+Trying 192.168.20.2...
+Connected to database.
+Escape character is '^]'.
+```
+
+If we would use static ip addresses inside containers we could limit accesses even more strictly.
+
+## Day 10: Conclusion
 [Back to top](#docker-network)
 
 Docker simplifies dealing with container networks, but we still need to understand how everything works under the hood. Unless we can make invalid assumptions and compromise the whole application.
