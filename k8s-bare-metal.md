@@ -1,4 +1,20 @@
 # K8s Bare Metal
+The plan is to go through bare metal K8s deployment step by step. 
+
+Content:
+- [Day 0: Bare metal](#day-0-bare-metal)
+- [Day 1: Prepare VMs](#day-1-prepare-vms)
+- [Day 2: Containerd and K8S](#day-2-containerd-and-k8s)
+- [Day 3: Create cluster](#day-3-create-cluster)
+- [Day 4: Flannel for pod networks](#day-4-flannel-for-pod-networks)
+- [Day 5: MetalLB for Load Balancing](#day-5-metallb-for-load-balancing)
+- [Day 6: Deploy demo app](#day-6-deploy-demo-app)
+- [Day 7: Ingress](#day-7-ingress)
+- [Day 8: LB in front of Ingress](#day-8-lb-in-front-of-ingress)
+
+## Day 0: Bare metal
+[Back to top](#k8s-bare-metal)
+
 We are all familiar with K8s services that are provided by big cloud platforms. We have managed K8s services on AWS, Google Clouds, Azure and so on. But sometimes we want to have our own bare metal cluster, running inside our own datacenter or even on our own computer.
 
 When we plan on going bare metal we must know that some K8s features will not work out of the box:
@@ -14,16 +30,6 @@ Our K8S cluster will contain 3 VMs with CentOS 7:
 - demo-k8s-3 (10.156.30.72)
 
 The first VM will be our master node that will run control plane. The second and the third will be our worker nodes.
-
-Content:
-- [Day 1: Prepare VMs](#day-1-prepare-vms)
-- [Day 2: Containerd and K8S](#day-2-containerd-and-k8s)
-- [Day 3: Create cluster](#day-3-create-cluster)
-- [Day 4: Flannel for pod networks](#day-4-flannel-for-pod-networks)
-- [Day 5: MetalLB for Load Balancing](#day-5-metallb-for-load-balancing)
-- [Day 6: Deploy demo app](#day-6-deploy-demo-app)
-- [Day 7: Ingress](#day-7-ingress)
-- [Day 8: LB in front of Ingress](#day-8-lb-in-front-of-ingress)
 
 ## Day 1: Prepare VMs
 [Back to top](#k8s-bare-metal)
