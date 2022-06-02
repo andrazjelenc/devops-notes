@@ -12,7 +12,7 @@ Content:
 - [Day 6: DNS Resolution in custom network](#day-6-dns-resolution-in-custom-network)
 - [Day 7: Demo usage of Docker networks (Simple)](#day-7-demo-usage-of-docker-networks-simple)
 - [Day 8: Demo usage of Docker networks (Advanced)](#day-8-demo-usage-of-docker-networks-advanced)
-- [Day 9: Demo usage of Docker networks (Advanced with br_netfilter)](#day-9-demo-usage-of-docker-networks-advanced-with-brnetfilter)
+- [Day 9: Demo usage of Docker networks (Advanced with br_netfilter)](#day-9-demo-usage-of-docker-networks-advanced-with-br_netfilter)
 - [Day 10: Conclusion](#day-10-conclusion)
 
 

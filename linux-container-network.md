@@ -582,7 +582,7 @@ If we want to filter traffic between two containers we first need to put them in
 
 ---
 
-NOTE: We can force bridge traffic to go through host's iptables with `br_netfilter` module. With using this module we could keep containers connected to the same bridge and then filter traffic there. See example [here](./docker-network.md#day-9-demo-usage-of-docker-networks-advanced-with-brnetfilter).
+NOTE: We can force bridge traffic to go through host's iptables with `br_netfilter` module. With using this module we could keep containers connected to the same bridge and then filter traffic there. See example [here](./docker-network.md#day-9-demo-usage-of-docker-networks-advanced-with-br_netfilter).
 
 ---
 
