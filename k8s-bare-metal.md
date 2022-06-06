@@ -11,6 +11,10 @@ Content:
 - [Day 6: Deploy demo app](#day-6-deploy-demo-app)
 - [Day 7: Ingress](#day-7-ingress)
 - [Day 8: LB in front of Ingress](#day-8-lb-in-front-of-ingress)
+- [Day 9: NFS server](#day-9-nfs-server)
+- [Day 10: NFS K8s provider](#day-10-nfs-k8s-provider)
+- [Day 11: Conclusion](#day-11-conclusion)
+
 
 ## Day 0: Bare metal
 [Back to top](#k8s-bare-metal)
@@ -70,7 +74,7 @@ We will be using iptables directly, so just stop and disable firewalld service
 ### Configure extra modules
 
 We need to enable two extra modules br_netfilter and overlay. 
-We first load them and made them permanent.
+We first load them and make them permanent.
 ```
 # modprobe br_netfilter
 # modprobe overlay
@@ -186,7 +190,7 @@ demo-k8s-3   NotReady   <none>          107s   v1.24.1
 ## Day 4: Flannel for pod networks
 [Back to top](#k8s-bare-metal)
 
-Just like K8s need containerd to handle creating containers, it also needs Flannel or somebody else like Calico to handle networking.
+Just like K8s needs containerd to handle creating containers, it also needs Flannel or something else like Calico to handle networking.
 
 We first download flannel kubernetes manifest
 ```
@@ -226,7 +230,7 @@ kube-system   kube-scheduler-demo-k8s-1              1/1     Running   1        
 # Day 5: MetalLB for Load Balancing
 [Back to top](#k8s-bare-metal)
 
-If we now go and deploy some Load Balancer service we will see it will hang in `pending` state. We need to deploy Load Balancer first.
+If we now go and deploy some Load Balancer service it will hang in `pending` state. We need to deploy Load Balancer first.
 
 We can deploy MetalLB directly from manifests on the Internet.
 ```
@@ -266,7 +270,7 @@ We can now apply it with kubectl.
 ```
 # kubectl apply -f teastore-clusterip.yaml
 ```
-After some time the pods should be all running.
+After some time the pods should all be running.
 ```
 # kubectl get pods
 NAME                                    READY   STATUS    RESTARTS   AGE
@@ -337,7 +341,7 @@ The downside of this approach is that we burn one IP for each external service.
 ## Day 7: Ingress
 [Back to top](#k8s-bare-metal)
 
-If we used Load Balancer service do to L2 load balancing, we use Ingress to do L7 load balancing. It can be realized on many different ways. With Nginx or HAProxy for example. We will go with Nginx.
+If we used Load Balancer service to do L2 load balancing, we use Ingress to do L7 load balancing. It can be done multiple ways. With Nginx or HAProxy for example. We will go with Nginx.
 
 We first need to deploy ingress controller.
 ```
@@ -388,7 +392,7 @@ If we open one of the following links:
 
 We should get 404 Not Found page as we need to hit ingress controller with Host header set to teastore.lan. We can do this with configuring our DNS server or manually adding line to our hosts file that points teastore.lan to 10.156.30.71 for example.
 
-We could also fix this by setting default backend service in our ingress. So if there is no match for domain we hit this default service.
+We could also fix this by setting default backend service in our ingress rule. So if there is no match for domain we hit this default service.
 ```
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -414,7 +418,11 @@ spec:
   ingressClassName: nginx
 ```
 
-If we now try again we should see our teastore app again even if we use IP address instead of domain name. The problem we still have is that we need to know IP of one of our cluster nodes and also to use this weird high number port. We will fix this by placing Load Balancer in front of Ingress controller service. 
+If we now try again we should see our teastore app again even if we use IP address instead of domain name. We still have two problems:
+- we need to know IP of one of our cluster nodes
+- we need to use this weird high number port. 
+
+We will fix this by placing Load Balancer in front of Ingress controller service. 
 
 ## Day 8: LB in front of Ingress
 [Back to top](#k8s-bare-metal)
@@ -423,7 +431,7 @@ We basically have two options:
 - Use external LB outside of cluster
 - Use internal MetalLB
 
-If we go with the first option we just created single point of failure and we need to deal with resistance and high available on our own. But why do that if we already have K8s to help us with that. So we will use MetalLB that is running inside our cluster to do load balancing in front of our ingress controller.
+If we go with the first option we just created single point of failure and we need to deal with resistance and high availability of LB on our own. But why do that if we already have K8s to help us with that. So we will use MetalLB that is running inside our cluster to do load balancing in front of our ingress controller.
 
 We just need to edit ingress-nginx-controller service and change service type from NodePort to LoadBalancer. We can also specify the IP we want to get from MetalLB using loadBalancerIP property.
 
@@ -473,3 +481,158 @@ ingress-nginx-controller-admission   ClusterIP      10.108.124.251   <none>     
 ```
 
 So now we set DNS server (or our local hosts file) to point domain teastore.lan to 10.156.30.79 and we are good to go!
+
+
+## Day 9: NFS server
+[Back to top](#k8s-bare-metal)
+
+When we use managed K8s, we usually use storage services of our cloud provider. 
+But in case of bare metal cluster, we need to take care of that on our own. We should not tie pods to a specific node, so storage must be somewhere else. One of the option is to use NFS server. It's preferred to deploy it on a different VM and manually take care of HA and backups. For production usage I would use one of the hardware storage solutions and iSCSI protocol.
+
+On new CentOS VM that lives on 10.156.30.80 install NFS server.
+```
+# yum install -y nfs-utils
+# systemctl start nfs-server rpcbind
+# systemctl enable nfs-server rpcbind
+```
+Create directory that will be served over network.
+```
+# mkdir /nfsfileshare
+# chmod 777 /nfsfileshare/
+```
+
+Create file `/etc/exports` to expose created directory and limit access to your subnet.
+```
+/nfsfileshare 10.156.30.0/24(rw,sync,no_root_squash)
+```
+
+Apply changes
+```
+# exportfs -r
+```
+
+And allow NFS traffic through firewall
+```
+firewall-cmd --permanent --add-service mountd
+firewall-cmd --permanent --add-service rpc-bind
+firewall-cmd --permanent --add-service nfs
+firewall-cmd --reload
+```
+Our NFS server is now all set and ready for usage. 
+
+## Day 10: NFS K8s provider
+[Back to top](#k8s-bare-metal)
+
+We can now add our newly created NFS Server as a storage to our cluster. We first need to install NFS utils to all our nodes, so they will be able to mount NFS volumes.
+```
+yum install nfs-utils
+```
+
+We now install Helm on the same machine that we use to run kubectl and communicate with the cluster. Helm is a K8s deployment tool and we will use it to deploy NFS external provisioner. 
+```
+# curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+# chmod 700 get_helm.sh
+# ./get_helm.sh
+```
+
+Let's add helm repository that contains charts for our provisioner and then install the chart to a new namespace.
+```
+# helm repo add nfs-subdir-external-provisioner https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/
+
+# helm install nfs-subdir-external-provisioner \
+  nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
+  --set nfs.server=10.156.30.80 \
+  --set nfs.path=/nfsfileshare \
+  --create-namespace \
+  --namespace nfs
+```
+
+If we now check list of storage classes we should see our NFS provider.
+```
+# kubectl get sc
+NAME         PROVISIONER                                     RECLAIMPOLICY   VOLUMEBINDINGMODE   ALLOWVOLUMEEXPANSION   AGE
+nfs-client   cluster.local/nfs-subdir-external-provisioner   Delete          Immediate           true                   6m33s
+```
+
+We can now test it. Let's create new deployment with persistent volume claim and see that volume is indeed created.
+
+```
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      volumes:
+        - name: nginx-storage
+          persistentVolumeClaim:
+            claimName: nginx-pv-claim
+      containers:
+        - name: nginx-container
+          image: nginx
+          ports:
+            - containerPort: 80
+              name: http-server
+          volumeMounts:
+            - mountPath: "/usr/share/nginx/html"
+              name: nginx-storage
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nginx-pv-claim
+spec:
+  storageClassName: nfs-client
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 3Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: 80
+  selector:
+    app: nginx
+```
+
+On NFS server we see that directory for our volume is created!
+```
+# ls -l /nfsfileshare/
+total 0
+drwxrwxrwx. 2 root root  6 Jun  6 11:31 volumes-nginx-pv-claim-pvc-5423c19a-86ed-400d-8be9-54eab05a89f3
+```
+
+And on the cluster we also see volume claim and volume.
+```
+# kubectl get pvc -A
+NAMESPACE   NAME             STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+volumes     nginx-pv-claim   Bound    pvc-5423c19a-86ed-400d-8be9-54eab05a89f3   3Gi        RWO            nfs-client     3h9m
+
+# kubectl get pv -A
+NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                    STORAGECLASS   REASON   AGE
+pvc-5423c19a-86ed-400d-8be9-54eab05a89f3   3Gi        RWO            Delete           Bound    volumes/nginx-pv-claim   nfs-client              3h9m
+```
+
+And when we delete volume claim the volume on K8s gets deleted, but on NFS server the folder is archived, we could change that behaviour with setting `storageClass.archiveOnDelete` to false when installing provider with Helm.
+
+## Day 11: Conclusion
+[Back to top](#k8s-bare-metal)
+
+We should now have fully functional K8s cluster that we can use for playing around. We took care of persistent volumes, ingress and load balancer services. We also take a very quick look at Helm, tool that we can use to deploy applications to the cluster.
