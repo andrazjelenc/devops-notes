@@ -356,3 +356,30 @@ interface GigabitEthernet2
 ```
 
 And now should all traffic from Client VM go to the internet via VPN to Umbrella. You can verify that by running `traceroute` command and see traffic path from Client VM to the destination in the Internet.
+
+# Day 4: Netconf
+[Back to top](#cisco-csr1000v)
+
+We can automate CSR using Python library `netmiko`. It connects to the device using SSH and then we send bunch CLI commands to establish state we want.
+
+But easier way to automate network devices is with Netconf. It is more suitable for programmatic approach.
+
+Enable netconf by entering the following line in the configure terminal:
+```
+netconf-yang
+```
+
+To test it try to SSH to it to port 830.
+```
+root@LAPTOP-LO0IHM65:~# ssh -p 830 admin@10.156.30.25 netconf
+admin@10.156.30.25's password:
+
+<?xml version="1.0" encoding="UTF-8"?>
+<hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
+<capabilities>
+<capability>urn:ietf:params:netconf:base:1.0</capability>
+<capability>urn:ietf:params:netconf:base:1.1</capability>
+<capability>urn:ietf:params:netconf:capability:writable-running:1.0</capability>
+<capability>urn:ietf:params:netconf:capability:xpath:1.0</capability>
+```
+And that's it!
