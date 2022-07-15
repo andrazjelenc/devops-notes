@@ -8,6 +8,8 @@ Content:
 - [Day 1: Basic configuration of CSR](#day-1-basic-configuration-of-csr)
 - [Day 2: NAT between LAN and WAN](#day-2-nat-between-lan-and-wan)
 - [Day 3: Site-to-Site VPN to Umbrella](#day-3-site-to-site-vpn-to-umbrella)
+- [Day 4: Site-to-Site VPN to Umbrella (UNDO)](#day-4-site-to-site-vpn-to-umbrella-undo)
+- [Day 5: Netconf](#day-5-netconf)
 
 
 ```
@@ -357,12 +359,31 @@ interface GigabitEthernet2
 
 And now should all traffic from Client VM go to the internet via VPN to Umbrella. You can verify that by running `traceroute` command and see traffic path from Client VM to the destination in the Internet.
 
-# Day 4: Netconf
+# Day 4: Site-to-Site VPN to Umbrella (UNDO)
+[Back to top](#cisco-csr1000v)
+
+To remove the VPN enter the following lines in the configure terminal:
+```
+interface GigabitEthernet2
+  no ip policy route-map umbrella-route-map
+  exit
+no route-map umbrella-route-map permit 10
+ 
+no interface Tunnel1
+no crypto ipsec profile umbrella-ipsec-profile
+no crypto ipsec transform-set umbrella-tset esp-aes 256 esp-sha256-hmac
+no crypto ikev2 profile umbrella-ikev2-profile
+no crypto ikev2 keyring umbrella-kr
+no crypto ikev2 policy umbrella-pol
+no crypto ikev2 proposal umbrella-proposal
+```
+
+# Day 5: Netconf
 [Back to top](#cisco-csr1000v)
 
 We can automate CSR using Python library `netmiko`. It connects to the device using SSH and then we send bunch CLI commands to establish state we want.
 
-But easier way to automate network devices is with Netconf. It is more suitable for programmatic approach.
+But easier way to automate network devices is with Netconf. It is more suitable for programmatic approach. For example use `ncclient` library for Python.
 
 Enable netconf by entering the following line in the configure terminal:
 ```
