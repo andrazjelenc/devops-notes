@@ -382,4 +382,4 @@ admin@10.156.30.25's password:
 <capability>urn:ietf:params:netconf:capability:writable-running:1.0</capability>
 <capability>urn:ietf:params:netconf:capability:xpath:1.0</capability>
 ```
-And that's it!
+And that's it! For constructing YANG payload take a look at [Cisco YANG suite](https://developer.cisco.com/yangsuite/).
