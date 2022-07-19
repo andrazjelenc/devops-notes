@@ -378,6 +378,11 @@ no crypto ikev2 policy umbrella-pol
 no crypto ikev2 proposal umbrella-proposal
 ```
 
+Finally clear established IKEv2 SA with
+```
+CSR1000V#clear crypto ikev2 sa
+```
+
 # Day 5: Netconf
 [Back to top](#cisco-csr1000v)
 
