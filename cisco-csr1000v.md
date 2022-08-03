@@ -213,7 +213,24 @@ icmp 10.156.30.25:13338    192.168.0.2:13338     8.8.8.8:13338         8.8.8.8:1
 Total number of translations: 1
 ```
 
-# Day 3: Site-to-Site VPN to Umbrella
+## Day 3: DHCP Server for LAN
+[Back to top](#cisco-csr1000v)
+
+We want to provide DHCP service for our clients on LAN side. We can do that with adding the following configuration.
+```
+ip dhcp pool LAN
+  network 192.168.0.0 255.255.255.0
+  default-router 192.168.0.1
+  dns-server 8.8.8.8
+```
+
+We also want to exclude some ip addresses from the dhcp range. These ip addresses could be later used for static assignments. Add the following line to the config:
+```
+ip dhcp exclude-address 192.168.0.1 192.168.0.10
+```
+
+
+# Day 4: Site-to-Site VPN to Umbrella
 [Back to top](#cisco-csr1000v)
 
 ## Umbrella
