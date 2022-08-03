@@ -7,9 +7,11 @@ Content:
 - [Day 0: Basics](#day-0-basics)
 - [Day 1: Basic configuration of CSR](#day-1-basic-configuration-of-csr)
 - [Day 2: NAT between LAN and WAN](#day-2-nat-between-lan-and-wan)
-- [Day 3: Site-to-Site VPN to Umbrella](#day-3-site-to-site-vpn-to-umbrella)
-- [Day 4: Site-to-Site VPN to Umbrella (UNDO)](#day-4-site-to-site-vpn-to-umbrella-undo)
-- [Day 5: Netconf](#day-5-netconf)
+- [Day 3: DHCP Server for LAN](#day-3-dhcp-server-for-lan)
+- [Day 4: Management VRF](#day-4-management-vrf)
+- [Day 5: Site-to-Site VPN to Umbrella](#day-5-site-to-site-vpn-to-umbrella)
+- [Day 6: Site-to-Site VPN to Umbrella (UNDO)](#day-6-site-to-site-vpn-to-umbrella-undo)
+- [Day 7: Netconf](#day-7-netconf)
 
 
 ```
@@ -229,8 +231,29 @@ We also want to exclude some ip addresses from the dhcp range. These ip addresse
 ip dhcp exclude-address 192.168.0.1 192.168.0.10
 ```
 
+# Day 4: Management VRF
+[Back to top](#cisco-csr1000v)
 
-# Day 4: Site-to-Site VPN to Umbrella
+We want to separate management traffic from data traffic. On switches we achieve this with VLANs and on routers we need VRFs to create different routing table.
+
+We begin with defining the VRF and continue with attaching it to the management interface.
+
+```
+ip vrf MGMT
+  rd 1:666
+```
+```
+interface GigabitEthernet3
+  ip vrf forwarding MGMT
+  ip address 192.168.99.10 255.255.255.0
+```
+
+We could also add default gateway for this VRF with the following config line, but in case where we do not want to route anywhere we can skip it.
+```
+ip route vrf MGMT 0.0.0.0 0.0.0.0 192.168.99.1
+```
+
+# Day 5: Site-to-Site VPN to Umbrella
 [Back to top](#cisco-csr1000v)
 
 ## Umbrella
@@ -376,7 +399,7 @@ interface GigabitEthernet2
 
 And now should all traffic from Client VM go to the internet via VPN to Umbrella. You can verify that by running `traceroute` command and see traffic path from Client VM to the destination in the Internet.
 
-# Day 4: Site-to-Site VPN to Umbrella (UNDO)
+# Day 6: Site-to-Site VPN to Umbrella (UNDO)
 [Back to top](#cisco-csr1000v)
 
 To remove the VPN enter the following lines in the configure terminal:
@@ -400,7 +423,7 @@ Finally clear established IKEv2 SA with
 CSR1000V#clear crypto ikev2 sa
 ```
 
-# Day 5: Netconf
+# Day 7: Netconf
 [Back to top](#cisco-csr1000v)
 
 We can automate CSR using Python library `netmiko`. It connects to the device using SSH and then we send bunch CLI commands to establish state we want.
